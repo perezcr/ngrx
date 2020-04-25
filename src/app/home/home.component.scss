@@ -1,0 +1,10 @@
+.card {
+  width: 18rem;
+  box-shadow: 5px 5px 20px 5px rgba(0, 0, 0, 0.75);
+  margin: auto;
+
+  &-title {
+    color: #09f;
+    text-transform: uppercase;
+  }
+}
