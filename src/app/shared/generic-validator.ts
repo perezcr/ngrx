@@ -1,4 +1,4 @@
-import { FormGroup } from "@angular/forms";
+import { FormGroup } from '@angular/forms';
 
 // Generic validator for Reactive forms
 // Implemented as a class, not a service, so it can retain state for multiple forms.
@@ -34,12 +34,12 @@ export class GenericValidator {
         } else {
           // Only validate if there are validation messages for the control
           if (this.validationMessages[controlKey]) {
-            messages[controlKey] = "";
+            messages[controlKey] = '';
             if ((c.dirty || c.touched) && c.errors) {
               Object.keys(c.errors).map((messageKey) => {
                 if (this.validationMessages[controlKey][messageKey]) {
                   messages[controlKey] +=
-                    this.validationMessages[controlKey][messageKey] + " ";
+                    this.validationMessages[controlKey][messageKey] + ' ';
                 }
               });
             }

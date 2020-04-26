@@ -1,16 +1,16 @@
-import { Injectable } from "@angular/core";
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
-import { Observable, of, BehaviorSubject, throwError } from "rxjs";
-import { catchError, tap, map } from "rxjs/operators";
+import { Observable, of, BehaviorSubject, throwError } from 'rxjs';
+import { catchError, tap, map } from 'rxjs/operators';
 
-import { Product } from "./product";
+import { Product } from './product';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class ProductService {
-  private productsUrl = "api/products";
+  private productsUrl = 'api/products';
   private products: Product[];
 
   private selectedProductSource = new BehaviorSubject<Product | null>(null);
@@ -37,20 +37,20 @@ export class ProductService {
   newProduct(): Product {
     return {
       id: 0,
-      productName: "",
-      productCode: "New",
-      description: "",
+      productName: '',
+      productCode: 'New',
+      description: '',
       starRating: 0,
     };
   }
 
   createProduct(product: Product): Observable<Product> {
-    const headers = new HttpHeaders({ "Content-Type": "application/json" });
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     product.id = null;
     return this.http
       .post<Product>(this.productsUrl, product, { headers })
       .pipe(
-        tap((data) => console.log("createProduct: " + JSON.stringify(data))),
+        tap((data) => console.log('createProduct: ' + JSON.stringify(data))),
         tap((data) => {
           this.products.push(data);
         }),
@@ -59,12 +59,12 @@ export class ProductService {
   }
 
   deleteProduct(id: number): Observable<{}> {
-    const headers = new HttpHeaders({ "Content-Type": "application/json" });
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     const url = `${this.productsUrl}/${id}`;
     return this.http
       .delete<Product>(url, { headers })
       .pipe(
-        tap((data) => console.log("deleteProduct: " + id)),
+        tap((data) => console.log('deleteProduct: ' + id)),
         tap((data) => {
           const foundIndex = this.products.findIndex((item) => item.id === id);
           if (foundIndex > -1) {
@@ -76,12 +76,12 @@ export class ProductService {
   }
 
   updateProduct(product: Product): Observable<Product> {
-    const headers = new HttpHeaders({ "Content-Type": "application/json" });
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     const url = `${this.productsUrl}/${product.id}`;
     return this.http
       .put<Product>(url, product, { headers })
       .pipe(
-        tap(() => console.log("updateProduct: " + product.id)),
+        tap(() => console.log('updateProduct: ' + product.id)),
         // Update the item in the list
         // This is required because the selected product that was edited
         // was a copy of the item from the array.

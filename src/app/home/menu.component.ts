@@ -1,14 +1,14 @@
-import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { AuthService } from "../user/auth.service";
+import { AuthService } from '../user/auth.service';
 
 @Component({
-  selector: "app-menu",
-  templateUrl: "./menu.component.html",
+  selector: 'app-menu',
+  templateUrl: './menu.component.html',
 })
 export class MenuComponent implements OnInit {
-  pageTitle = "NgRx";
+  pageTitle = 'NgRx';
 
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
@@ -18,7 +18,7 @@ export class MenuComponent implements OnInit {
     if (this.authService.currentUser) {
       return this.authService.currentUser.userName;
     }
-    return "";
+    return '';
   }
 
   constructor(private router: Router, private authService: AuthService) {}
@@ -27,6 +27,6 @@ export class MenuComponent implements OnInit {
 
   logOut(): void {
     this.authService.logout();
-    this.router.navigate(["/home"]);
+    this.router.navigate(['/home']);
   }
 }

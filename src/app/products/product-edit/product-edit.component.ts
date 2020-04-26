@@ -1,21 +1,21 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Subscription } from "rxjs";
+import { Subscription } from 'rxjs';
 
-import { Product } from "../product";
-import { ProductService } from "../product.service";
-import { GenericValidator } from "../../shared/generic-validator";
-import { NumberValidators } from "../../shared/number.validator";
+import { Product } from '../product';
+import { ProductService } from '../product.service';
+import { GenericValidator } from '../../shared/generic-validator';
+import { NumberValidators } from '../../shared/number.validator';
 
 @Component({
-  selector: "app-product-edit",
-  templateUrl: "./product-edit.component.html",
-  styleUrls: ["./product-edit.component.scss"],
+  selector: 'app-product-edit',
+  templateUrl: './product-edit.component.html',
+  styleUrls: ['./product-edit.component.scss'],
 })
 export class ProductEditComponent implements OnInit, OnDestroy {
-  pageTitle = "Product Edit";
-  errorMessage = "";
+  pageTitle = 'Product Edit';
+  errorMessage = '';
   productForm: FormGroup;
 
   product: Product | null;
@@ -31,15 +31,15 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     // These could instead be retrieved from a file or database.
     this.validationMessages = {
       productName: {
-        required: "Product name is required.",
-        minlength: "Product name must be at least three characters.",
-        maxlength: "Product name cannot exceed 50 characters.",
+        required: 'Product name is required.',
+        minlength: 'Product name must be at least three characters.',
+        maxlength: 'Product name cannot exceed 50 characters.',
       },
       productCode: {
-        required: "Product code is required.",
+        required: 'Product code is required.',
       },
       starRating: {
-        range: "Rate the product between 1 (lowest) and 5 (highest).",
+        range: 'Rate the product between 1 (lowest) and 5 (highest).',
       },
     };
 
@@ -52,16 +52,16 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     // Define the form group
     this.productForm = this.fb.group({
       productName: [
-        "",
+        '',
         [
           Validators.required,
           Validators.minLength(3),
           Validators.maxLength(50),
         ],
       ],
-      productCode: ["", Validators.required],
-      starRating: ["", NumberValidators.range(1, 5)],
-      description: "",
+      productCode: ['', Validators.required],
+      starRating: ['', NumberValidators.range(1, 5)],
+      description: '',
     });
 
     // Watch for changes to the currently selected product
@@ -100,7 +100,7 @@ export class ProductEditComponent implements OnInit, OnDestroy {
 
       // Display the appropriate page title
       if (this.product.id === 0) {
-        this.pageTitle = "Add Product";
+        this.pageTitle = 'Add Product';
       } else {
         this.pageTitle = `Edit Product: ${this.product.productName}`;
       }
@@ -158,7 +158,7 @@ export class ProductEditComponent implements OnInit, OnDestroy {
         }
       }
     } else {
-      this.errorMessage = "Please correct the validation errors.";
+      this.errorMessage = 'Please correct the validation errors.';
     }
   }
 }
