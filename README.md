@@ -205,7 +205,7 @@ So far our components subscribe to the store, selecting the entire products slic
 
 A selector is a reusable query of our store. It is basically like a stored procedure for accessing our in-memory state information. Selectors allow us to keep one copy of the state in the store, but project it into different shapes, making it easier to access by our components and services. Our components use the selector to select state from our store, adding a level of abstraction between our stores structure and our component.
 
-### Benefits to using selectors
+### Benefits to using Selectors
 <p align="center">
   <img src="imgs-notes/15.png" alt="Selectors">
 </p>
@@ -215,7 +215,7 @@ A selector is a reusable query of our store. It is basically like a stored proce
 4. They are reusable, so any component can access the same bit of state the same way.
 5. Selectors are memoized, that's a fancy word meaning that the selectors returned value is cached and won't be reevaluated unless the state changes. This can improve performance.
 
-### What is a selector?
+### What is a Selector?
 It is a function that drills into the store and returns a specific bit of state. There are two basic types of selector functions provided by the NgRx library (Both required).
 
 The first type is a **createFeatureSelector**. This function allows us to get the feature slice of state simply by specifying its feature name. We strongly type the return value using the generic argument. Here we specify our products slice of state and assign this function to a constant. When executed, it selects the specific feature slice of state. We don't export this constant so it can only be used where it is defined.
@@ -234,4 +234,52 @@ One important thing to note here, a selector should be a pure function. That is 
 ### Composing Selectors
 <p align="center">
   <img src="imgs-notes/18.png" alt="Composing Selectors">
+</p>
+
+## Actions Creators
+There are several ways to strongly type our actions, including action factory functions. But we'll take advantage of the extra type safety and build action creators. Strongly typing actions using action creators involves three steps:
+1. Define the action types as a set of named constants.
+2. Build the action creators.
+3. Define a union type for those action creators.
+
+### Benefits of Strongly Typed Actions
+1. Strong typing helps prevent hard to find errors from misspellings or typos.
+2. Strong typing improves the tooling experience, making it easy to see the list of actions and select the appropriate action for a given purpose, and it results in a well-defined set of valid actions that the application can perform.
+3. This provides a level of documentation on what the application can do. So strong typing help us define a clear and clean set of actions that the tooling uses to help us better use those actions.
+
+### Defining Action Types
+Since action types are strings, we can define the set of valid action types using an enum. Using enums makes it easy to document intent, which is exactly what we want for our actions. This enum will ultimately provide the comprehensive list of all actions that can be performed against the product feature state. We could name it anything, but by convention we'll name it based on our feature, ProductActionTypes. We then clearly name each action type with an enum constant. The action constant name often begins with an action verb, such as **toggle, set, clear, initialize, or load**. We assign each action type name to an appropriate string.
+```typescript
+export enum ProductActionTypes {
+  ToggleProductCode = '[Product] Toggle Product Code',
+  SetCurrentProduct = '[Product] Set Current Product',
+  ClearCurrentProduct = '[Product] Clear Current Product',
+  InitializeCurrentProduct = '[Product] Initialize Current Product',
+}
+```
+Here we begin each action string with the name of the slice of state that is effected by the action, then we specify the action type name, but with spaces to make it readily readable. You and your team may want to get more specific with these strings, including the name of the page or API that dispatches the action. You and your team may want to get more specific with these strings, including the name of the page or API that dispatches the action. That provides a better context of the event source and can make it even easier to use the DevTools to examine where the actions were dispatched.
+
+### Building Actions Creators
+The next step is to build an action creator for each action. An action creator expresses an action as a simple class with two properties, a type and a payload. It's called an **Action Creator** because we use it to literally create the actions we dispatch. Expressing actions as classes makes it possible to strongly type the actions when we dispatch and process them in the application.
+ ```typescript
+export class ToggleProductCode implements Action {
+  readonly type = ProductActionTypes.ToggleProductCode;
+
+  constructor(public payload: boolean){ }
+}
+```
+By convention, we name the class the same name as the action type constant defined in the enum. To define the class as an action, we implement the Action interface provided by the NgRx store. Then we declare the two properties. We define the type property as readonly so it is never changed. We assign it to the associated enum constant. We define the payload property in the constructor. By specifying the accessibility here in the constructor, we take advantage of a TypeScript shortcut that declares a property and assigns that property in the constructor.
+
+### Defining a Union Type for the Action Creators
+The last step to strongly typing our actions is to define a type that unions all of the action creator classes. We do this so we can limit the possible actions to only those defined by one of these creator classes. To expose this union type to the other parts of the application, we export it. Then we give it a name based on our feature. We assign it to the union of our action creator classes, using the pipe character to union the classes into one consolidated type, one type to rule them all.
+```typescript
+export type ProductActions = ToggleProductCode
+  | SetCurrentProduct
+  | ClearCurrentProduct
+  | InitializeCurrentProduct;
+```
+
+### Defining Actions for Complex Operations
+<p align="center">
+  <img src="imgs-notes/19.png" alt="Complex Operations">
 </p>
