@@ -16,9 +16,11 @@ import { PageNotFoundComponent } from './home/page-not-found.component';
 
 // NgRx
 import { StoreModule } from '@ngrx/store';
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
 /* Feature Modules */
 import { UserModule } from './user/user.module';
+import { environment } from '../environments/environment';
 
 @NgModule({
   imports: [
@@ -29,6 +31,11 @@ import { UserModule } from './user/user.module';
     AppRoutingModule,
     // We don't have reducer for our root app state
     StoreModule.forRoot({}),
+    StoreDevtoolsModule.instrument({
+      name: 'NgRx Getting Started',
+      maxAge: 25,
+      logOnly: environment.production,
+    }),
   ],
   declarations: [
     AppComponent,

@@ -149,3 +149,27 @@ A pure function is a function, given the same arguments, will always return the 
 * Component communication. NgRx makes it easier to access to shared state via injecting the store into a component versus passing data between components.
 
 > "Redux is not great for making simple things quickly. It's great for making really hard things simple."
+
+## Redux Devtools
+1. Download the Redux Devtools Extension.
+2.
+```bash
+npm install @ngrx/store-devtools
+```
+3. In your AppModule add instrumentation to the module imports using StoreDevtoolsModule.instrument:
+```typescript
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+import { environment } from '../environments/environment'; // Angular CLI environment
+
+@NgModule({
+  imports: [
+    StoreModule.forRoot(reducers),
+    // Instrumentation must be imported after importing StoreModule (config is optional)
+    StoreDevtoolsModule.instrument({
+      maxAge: 25, // Retains last 25 states
+      logOnly: environment.production, // Restrict extension to log-only mode
+    }),
+  ],
+})
+export class AppModule {}
+```
