@@ -173,3 +173,65 @@ import { environment } from '../environments/environment'; // Angular CLI enviro
 })
 export class AppModule {}
 ```
+
+## Defining Interfaces for Slices of State
+For each slice of state we define an interface that describes the structure of that state. Then we pull it together to compose the global application state from each feature slice of state. This interface then defines our entire state tree, referencing each of the feature interfaces for detailed properties.
+<p align="center">
+  <img src="imgs-notes/12.png" alt="interfaces">
+</p>
+
+## Extending the State Interface for Lazy Loaded Features
+When we set up a feature module for lazy loading, that module is independently bundled, and when the user accesses the application, it is downloaded from the server separate from our main application bundle, after the first page of the application is displayed. This improves our application's startup performance.
+### So what does lazy loading have to do with our state interface?
+We want to establish logical boundaries around our lazy loaded features. To maintain that boundary, we want to keep our lazy loaded feature areas completely separate from our initial bundled code. By directly importing the product state interface here, we break through that boundary.
+<p align="center">
+  <img src="imgs-notes/13.png" alt="Lazy Load">
+</p>
+
+In this example, we'll instead define the interface only for the users slice of state, since it isn't lazy loaded. Then in the products feature code, we'll extend that definition of our global application state to include the product state. Since this code is part of the products feature, we keep it within our lazy loading boundary. Here we define a state interface that extends our global application state interface using the extends keyword. Instead of importing each individual interface from our app. state file, we import *, which imports all of the exported members. Extending the global application state results in a state interface that looks just like our original, but is defined to keep our lazy loading boundary intact. As we add features, if they aren't lazy loaded we'll add them to this state interface. Otherwise we'll use this technique and the associated feature to extend the state interface.
+
+## Set Initial Values
+Since one of the goals of using NgRx is to make our application more predictable, we should explicitly define initial values for each bit of state so that it is not undefined. One way to initialize our state is to define an object and set an initial value for each bit of state. To ensure the initial value is never changed, we declare it as a constant.
+<p align="center">
+  <img src="imgs-notes/14.png" alt="Initial State">
+</p>
+Here we define a constant named initialState and strongly type it using our ProductState interface. We then specify an initial value for each property. To assign this initial state, we take advantage of JavaScript's default functional parameter syntax. This syntax allows us to initialize a function parameter with a default value. Now when the store is initialized and the reducer is first called, these initial values are assigned and our store is never undefined.
+
+## Selectors
+So far our components subscribe to the store, selecting the entire products slice of state. There are a few issues with this approach.
+1. Hardcoded string here that leaves us open to typographical and misspelling errors.
+2. Explicitly retrieve a property from the store, making assumptions about the store structure. That means if we ever change the structure of our store, reorganizing it into sub-slices, we have to find every select and update its code.
+3. Watches for changes to any property in the slice of state.
+
+A selector is a reusable query of our store. It is basically like a stored procedure for accessing our in-memory state information. Selectors allow us to keep one copy of the state in the store, but project it into different shapes, making it easier to access by our components and services. Our components use the selector to select state from our store, adding a level of abstraction between our stores structure and our component.
+
+### Benefits to using selectors
+<p align="center">
+  <img src="imgs-notes/15.png" alt="Selectors">
+</p>
+1. They provide a strongly typed API for the components to use. We don't have to refer to slices of state with hard coded strings.
+2. They decouple the store from the components so the components don't need to know about the structure of the store. This allows us to reorganize or split up the state differently over time without updating every component that accesses it.
+3. Selectors can encapsulate complex data transformations, making it easier for the components to obtain complex data.
+4. They are reusable, so any component can access the same bit of state the same way.
+5. Selectors are memoized, that's a fancy word meaning that the selectors returned value is cached and won't be reevaluated unless the state changes. This can improve performance.
+
+### What is a selector?
+It is a function that drills into the store and returns a specific bit of state. There are two basic types of selector functions provided by the NgRx library (Both required).
+
+The first type is a **createFeatureSelector**. This function allows us to get the feature slice of state simply by specifying its feature name. We strongly type the return value using the generic argument. Here we specify our products slice of state and assign this function to a constant. When executed, it selects the specific feature slice of state. We don't export this constant so it can only be used where it is defined.
+
+The second type of selector function is a **createSelector**. This function allows us to get any bit of state by composing selectors to navigate down the state tree. Here we pass the feature selector function in as the first argument to this selector. The last argument is a projector function that takes in the state returned from the prior arguments, which in this case is the products slice. We can then filter, map, or otherwise process the state to return the desired value. We assign this function to an exported constant so we can use the selector from our components. By using selectors in our components, if our stores structure ever changes, we can modify these selectors to access that new structure without changing any of the components that use them.
+<p align="center">
+  <img src="imgs-notes/16.png" alt="Selectors Types">
+</p>
+
+One important thing to note here, a selector should be a pure function. That is to say that given the same input, the function should always return the same output with no side effects.
+
+<p align="center">
+  <img src="imgs-notes/17.png" alt="Summary">
+</p>
+
+### Composing Selectors
+<p align="center">
+  <img src="imgs-notes/18.png" alt="Composing Selectors">
+</p>
