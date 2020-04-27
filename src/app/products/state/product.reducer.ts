@@ -3,23 +3,29 @@ import * as fromRoot from '../../state/app.state';
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { ProductActions, ProductActionTypes } from './product.actions';
 
-// For Lazy Loading
+// Extends the app state to include the product feature.
+// This is required because products are lazy loaded.
+// So the reference to ProductState cannot be added to app.state.ts directly.
 export interface State extends fromRoot.State {
   products: ProductState;
 }
 
+// State for this feature (Product)
 export interface ProductState {
   showProductCode: boolean;
   currentProduct: Product;
   products: Product[];
+  error: string;
 }
 
 const initialState: ProductState = {
   showProductCode: true,
   currentProduct: null,
   products: [],
+  error: '',
 };
 
+// Selector functions
 const getProductFeatureState = createFeatureSelector<ProductState>('products');
 
 export const getShowProductCode = createSelector(
@@ -35,6 +41,11 @@ export const getCurrentProduct = createSelector(
 export const getProducts = createSelector(
   getProductFeatureState,
   (state) => state.products
+);
+
+export const getError = createSelector(
+  getProductFeatureState,
+  (state) => state.error
 );
 
 // First parameter: State from our store
@@ -69,6 +80,18 @@ export function reducer(
           description: '',
           starRating: 0,
         },
+      };
+    case ProductActionTypes.LoadSuccess:
+      return {
+        ...state,
+        products: action.payload,
+        error: '',
+      };
+    case ProductActionTypes.LoadFail:
+      return {
+        ...state,
+        products: [],
+        error: action.payload,
       };
     // If none of the action types match the dispatched action our default case returns the original state to the store
     default:

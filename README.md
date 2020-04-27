@@ -283,3 +283,145 @@ export type ProductActions = ToggleProductCode
 <p align="center">
   <img src="imgs-notes/19.png" alt="Complex Operations">
 </p>
+
+## Effects
+Operations in our application may have side effects. In this context, a side effect is an operation that depends on or interacts with an external source, such as external state, devices, or an API. So using HTTP to access a backend server is an example of a side effect. Rather than having the logic to manage these side effects in your components, you can use NgRx's architecture to handle such code, to keep your components pure.
+
+At first glance, we may look at our existing code and think we can simply inject the store and the services into the constructor, then dispatch an action after the service retrieves the products. But in NgRx components are not the best place to manage code with side effects, like our product services HTTP requests here, as we want to keep our components pure.
+<p align="center">
+  <img src="imgs-notes/20.png" alt="Effects">
+</p>
+We do not want to handle side effects in reducers either, as their pure functions you can't modify state here in an async callback, in fact, you can't even dispatch actions from a reducer when you do get a response back because reducers are designed to be pure functions, not classes, so there's no constructor to inject the store into to be able to dispatch an action. We could get an instance of the store by other means, but it's not the reducer's role and it wouldn't be conventional, so this won't work and is a bad idea, and you break the purity of the store reducer.
+<p align="center">
+  <img src="imgs-notes/21.png" alt="Effects">
+</p>
+
+So the best place to side effects is in an **effect**, which work by taking in an action, doing some work, and dispatching a new action, often a success or a fail action.
+
+### Example
+<p align="center">
+  <img src="imgs-notes/22.png" alt="Diagram with Effects">
+</p>
+We will use effects to deal with the async side effect operation of fetching products from our server. The component dispatches an action on initialization with a type of load and no payload because we don't need to call our server with any parameters to get all products. We now have two places in our application we could be listening for this action, either in a reducer or an effect. In this case, it's our effect that we configure to listen for the load action after the action goes via the reducer. As we know, async requests have side effects and we can't do async work in our reducers. Remember, our effects job is to take in actions, do some work, and dispatch other actions. In this case, the work is getting the products from our server, so the effect talks with our Angular product service that makes a HTTP request to our server to get the products. If the server responds successfully then passes an array of products to the service, the service then passes the products to the effect that dispatches another action. This time a **LoadSuccess action** with the Products array as its payload. The reducer takes that action with the array of products and existing state to create new state with the added products. We can then use our get products selector to subscribe to state changes in our component and pass the Products array to the view.
+
+### Benefits of Effects
+1. Effects keep your components pure by removing the code that deals with side effects.
+2. Effects help isolate side effects into a central place.
+3. Effects make it easier to test side effects in isolation from the components that use them.
+
+### Defining an Effect
+An effect is a type of Angular service, so at its core it should just look like any other Angular service with that injectable decorator on top of a TypeScript class, except by convention, we'll call it ProductEffects.
+
+In the constructor, we inject the Actions observable from the NgRx library, which emits an action every time one is dispatched in our application.
+```typescript
+@Injectable()
+export class ProductEffects {
+  //  Inject the ProductService to do the work of fetching our products from the server.
+  // To listen to all actions in our application, we can use the actions$ observable we injected into our effects constructor.
+  constructor(private productService: ProductService, private actions$: Actions) { }
+
+  // Create an effect by making a variable and registering it with NgRx as an effect by adding an effect decorator on top of it.
+  @Effect()
+  loadProducts$ = this.actions$.pipe(
+    // ofType operator and configuring it to listen for our Load action, which we can access from our ProductActionTypes enum in our productActions file
+    ofType(ProductActionTypes.Load),
+    // MergeMap maps over every emitted action calling Angular services who return observables, then merges these observables into a single stream
+    mergeMap(action =>
+      this.productService.getProducts().pipe(
+        // Use another pipe with a map operator to map over the emitted products array and return a LoadSuccess action with the products as its payload.
+        // Return a new action
+        map(products => (new LoadSuccess(products)))
+      )
+    )
+  )
+}
+```
+
+### SwitchMap vs MergeMap
+Often your effects will be about making HTTP requests that return observables. Depending on the operator you choose, you might cancel in-flight requests or make requests out of order if new actions are dispatched against the same effect. We used an RxJS merge map operator in our effect to map over our current actions observable and merge any inner observables returned from calling our Angular service into a single observable stream, which most of the time will likely be the operator you want, but not always. We could have used a switchMap operator. But choosing the wrong operator here can be a source of unexpected race conditions.
+
+> switchMap: Cancel the current subscription/request and can cause race conditions.
+> Use for get requests or cancelable requests like searches.
+
+You'll use the switchMap operator least often in your effects because it cancels the current subscription if a new value is emitted. This means if someone dispatches, for example, a second save product action before the first save product action's HTTP request returns to your effect, the first in-flight HTTP request will be canceled and the product might not get saved, leading to potential race conditions. So use the switchMap operator for get requests or cancelable requests, like searches in a type ahead.
+
+> concatMap: Runs subscriptions/requests in order and is less performant.
+
+ConcatMap runs HTTP requests in order and will wait for the last request to finish before starting the next, which is less performant, but the safest. So use concatMap for get, post, and put requests when order is important.
+
+> mergeMap: Runs subscription/requests in parallel.
+> Use for put, post and delete methods when order is not important.
+
+MergeMap runs HTTP requests in parallel and is more performant than concatMap, but doesn't guarantee order. So you use mergeMap for put, post, and delete methods when the order is not important.
+
+> exhaustMap: Ignores all subsequent subscription/requests until it completes.
+> Use for login when you do not want more requests until the initial one is complete.
+
+ExhaustMap will ignore all subsequent actions dispatched until the current request completes. Use exhaustMap, for example, during logins when you do not want to make or queue up anymore requests until the initial one is complete.
+
+### Registering an Effect
+Initializing the effects library in an application is similar to initializing the store, but rather than passing in reducers, we pass in an array of effects. We will lazily load product effects when we load our Module.
+```typescript
+@NgModule({
+  imports: [
+    ...
+    StoreModule.forFeature('products', reducer),
+    EffectModule.forFeature([ProductEffects])
+  ],
+  declarations: [...],
+  providers: [...]
+})
+export class ProductModule{ }
+```
+
+### Exception Handling in Effects
+To listen for errors, we can use another operator called catchError. If our productService returns an error, we can get a hold of it here and return a LoadFail action with a payload of the error. The catchError operator does not automatically return an observable back into the stream, like our map operator, so we can use the observable of to create an observable from our LoadFail action and return that.
+```typescript
+@Effect()
+loadProducts$ = this.actions$.pipe(
+  ofType(ProductActionTypes.Load),
+  mergeMap(action =>
+    this.productService.getProducts().pipe(
+      map(products => (new LoadSuccess(products))),
+      catchError(err => of(new LoadFail(err)))
+    )
+  )
+)
+```
+
+## Unsubscribing from Observables
+To avoid a creating a possible memory leak by not unsubscribing, let's use a common unsubscribe strategy in Angular, which is to use the takeWhile operator. We want to keep subscribing to this store and take while our component is still active. To do this, let's initialize a property called **componentActive** to true at the top of our component, then in an Angular ngOnDestory lifecycle hook, which will be fired when the component is destroyed, we can change this variable to false. This allows us to say take while or keep subscribing until the component is destroyed.
+```typescript
+export class ProductListComponent implements OnInit, OnDestroy {
+  componentActive = true;
+
+  ngOnInit() {
+    this.store.pipe(select(fromProduct.getProducts),
+      takeWhile(() => this.componentActive))
+      .subscribe((products: Product[]) => this.products = products);
+  }
+
+  ngOnDestroy() {
+    componentActive = false;
+  }
+}
+```
+You may be looking at that is a pain to have to add this unsubscribe code to every piece of state I subscribe to. This is where Angular's async pipe can help, as it automatically subscribes and unsubscribes to observables for you. In our Product List Component, rather than subscribe to the product state, we can leave it as an observable of product and use it to initialize a product$ variable to use in our template. In the Product List View, we use the async pipe to subscribe to the product$ observable and pass the emitted products to the ngFor. The beauty of this approach is now Angular will handle the subscribing and unsubscribing automatically for you.
+
+```typescript
+this.products$ = this.store.pipe(select(fromProduct.getProducts));
+```
+```typescript
+*ngFor="let product of products$ | async"
+```
+
+### When should you use the Async Pipe vs Subscribing?
+Subscribe in the component when you need the observable's value in the component class, so to work with it or to change the value before using it in the template. If you do not need to do anything but subscribe and use the value in the template, then it's much easier to use an async pipe. If you don't need the value in the component, then technically it's just a syntactic difference and it's up to you which you'd prefer, as long as you unsubscribe. When using NgRx you have a lot of small pieces of state to subscribe to and our code is a lot easier to read with async pipes.
+
+```html
+<div *ngIf="products$ | async as products">
+  <div *ngFor="let product of products">{{product.name}}</div>
+</div>
+```
+
+We can also use the async pipe with an ng if using the as syntax, that allows us to subscribe and set a local template reference to the value of the observable. Add the async pipe using the products$ observable and using an as products syntax to set a local variable we can use inside of the template. This can be extremely handy for these scenarios where we want to hide the HTML until we get a value from the observable.
