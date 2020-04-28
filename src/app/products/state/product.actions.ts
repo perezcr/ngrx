@@ -9,6 +9,15 @@ export enum ProductActionTypes {
   Load = '[Product] Load',
   LoadSuccess = '[Product] Load Success',
   LoadFail = '[Product] Load Fail',
+  CreateProduct = '[Product] Create Product',
+  CreateProductSuccess = '[Product] Create Product Success',
+  CreateProductFail = '[Product] Create Product Fail',
+  UpdateProduct = '[Product] Update Product',
+  UpdateProductSuccess = '[Product] Update Product Success',
+  UpdateProductFail = '[Product] Update Product Fail',
+  DeleteProduct = '[Product] Delete Product',
+  DeleteProductSuccess = '[Product] Delete Product Success',
+  DeleteProductFail = '[Product] Delete Product Fail',
 }
 
 export class ToggleProductCode implements Action {
@@ -55,6 +64,60 @@ export class LoadFail implements Action {
   constructor(public payload: string) {}
 }
 
+export class CreateProduct implements Action {
+  readonly type = ProductActionTypes.CreateProduct;
+
+  constructor(public payload: Product) {}
+}
+
+export class CreateProductSuccess implements Action {
+  readonly type = ProductActionTypes.CreateProductSuccess;
+
+  constructor(public payload: Product) {}
+}
+
+export class CreateProductFail implements Action {
+  readonly type = ProductActionTypes.CreateProductFail;
+
+  constructor(public payload: string) {}
+}
+
+export class UpdateProduct implements Action {
+  readonly type = ProductActionTypes.UpdateProduct;
+
+  constructor(public payload: Product) {}
+}
+
+export class UpdateProductSuccess implements Action {
+  readonly type = ProductActionTypes.UpdateProductSuccess;
+
+  constructor(public payload: Product) {}
+}
+
+export class UpdateProductFail implements Action {
+  readonly type = ProductActionTypes.UpdateProductFail;
+
+  constructor(public payload: string) {}
+}
+
+export class DeleteProduct implements Action {
+  readonly type = ProductActionTypes.DeleteProduct;
+
+  constructor(public payload: number) {}
+}
+
+export class DeleteProductSuccess implements Action {
+  readonly type = ProductActionTypes.DeleteProductSuccess;
+
+  constructor(public payload: number) {}
+}
+
+export class DeleteProductFail implements Action {
+  readonly type = ProductActionTypes.DeleteProductFail;
+
+  constructor(public payload: string) {}
+}
+
 export type ProductActions =
   | ToggleProductCode
   | SetCurrentProduct
@@ -62,4 +125,13 @@ export type ProductActions =
   | InitializeCurrentProduct
   | Load
   | LoadSuccess
-  | LoadFail;
+  | LoadFail
+  | CreateProduct
+  | CreateProductSuccess
+  | CreateProductFail
+  | UpdateProduct
+  | UpdateProductSuccess
+  | UpdateProductFail
+  | DeleteProduct
+  | DeleteProductSuccess
+  | DeleteProductFail;
