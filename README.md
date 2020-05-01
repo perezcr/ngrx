@@ -425,3 +425,147 @@ Subscribe in the component when you need the observable's value in the component
 ```
 
 We can also use the async pipe with an ng if using the as syntax, that allows us to subscribe and set a local template reference to the value of the observable. Add the async pipe using the products$ observable and using an as products syntax to set a local variable we can use inside of the template. This can be extremely handy for these scenarios where we want to hide the HTML until we get a value from the observable.
+
+## Architectural Considerations
+
+### Folder by Feature or Function
+If we had structured our state folders by function, we would have needed to taken out all of the state folders contents and moved it, along with all other state, into one main state folder and then now would be following the by function approach, and this is not the recommended way. The benefits of having your state folders by feature versus function are:
+1. Follows the Angular style guide's recommendations to organize your code by feature versus function.
+2. Makes it easier for a developer to locate and identify what each file does at a glance.
+3. as your app grows, it stops it from becoming cluttered.
+
+### Container Presentational Component Pattern
+A benefit of NgRx is that it takes a lot of logic out of your components and moves it into NgRx's effects, reducers, and Angular services. This makes it easier to move towards a presentation or container component pattern, which is a way to divide components into two categories. Well before going into the characteristics of each category, it's important to note, it's more a mindset than a rigid classification. You still need to be pragmatic, making components that sometimes will have both characteristics.
+
+#### Presentational Components
+Presentational components are concerned with how things look.
+2. They're about the HTML markup and specific CSS styles to render your views.
+3. They have no dependencies on the rest of your app, such as injected services or the store.
+4. They don't specify how the data is loaded or changed, but they emit events via @Outputs to trigger container components to do the work.
+5. They receive data exclusively via Angular @Inputs.
+6. May contain both presentational and container components as their children.
+
+It's not a strict requirement that presentational components only have other presentational components underneath them. Some examples of presentational components would be nav menus, sidebars, user info panels, and many list type components.
+
+#### Container Components
+Container components are concerned with how things work.
+1. Render little to no HTML markup and specific CSS styles.
+2. They do have dependencies on the rest of your app, such as injected services or the store.
+3. They're stateful and can specify how the data is loaded or changed.
+4. They are often top level routes you navigate to. It's very common to have all of your routes load container components that have a tree of mostly presentational components underneath them.
+5. They may also contain both presentational and container components underneath them.
+
+<p align="center">
+  <img src="imgs-notes/23.png" alt="Container vs Presentation">
+</p>
+
+#### Performance
+The performance is a key benefit of following this pattern by utilizing Angular's change detection strategy called OnPush. OnPush allows skipping change detection on presentational components whose @Inputs have not changed.
+
+#### Composability
+Composing pages of presentational components that are less tightly coupled makes it easier to reuse them while also understanding your UI and app a lot better. Imagine we wanted to use our product list component to render either a list of products, available products, products on sale, or even a list of products based on a search filter. The first time we wanted to show a different list, we would have to start adding more logic to the product list component and making it more brittle, and this would go on and on for each new scenario. Instead, we could make a presentational component so it doesn't know how to get the filtered data or what to do when a product is selected, except emit an event, which makes it a lot easier to reuse this component.
+
+#### Easier to test
+Presentational components are much easier to test with no injected dependencies or services to mock and spy presentational components, usually pure components who always return the same result for the same inputs, also making it simpler to know what to test in your components.
+
+Container components also become simpler to test as you separate the concern of getting data with rendering the view.
+
+### Application Architecture
+Let's separate out our product show component and our product list component into a container component and a presentational component.
+
+The first step in following the presentational container component pattern is to separate the different component categories into folders, adding the product-list and product-edit components as presentational components under a folder called components and the product-shell component in a folder called containers.
+
+<p align="center">
+  <img src="imgs-notes/24.png" alt="Folder">
+</p>
+
+Our product shell component at the moment is truly a shell with no logic or injected dependencies, it's just a container for our product list component. The product list component, however, can become a presentational component if we move the injected store dependency, which is used for selecting multiple pieces of state and to dispatch multiple actions.
+
+<p align="center">
+  <img src="imgs-notes/25.png" alt="Before">
+</p>
+
+Moving all this logic over to the product shell component means now our product list component doesn't know or care how to get its data, it just knows it will be passed data via @Inputs. Any changes to the state or that are external to the component, will be delegated to the container component via @Output EventEmitters, for example selecting a product to edit or setting the state property's show product code flag to true. The components still has methods, but all they do is listen for button clicks and emit events. The component no longer needs a constructor and becomes a pure component, which is very simple to rationalize about and reuse.
+
+<p align="center">
+  <img src="imgs-notes/26.png" alt="After">
+</p>
+
+The presentational product list component sitting on the template of our product shell component, may now look more complicated, needing to pass all of these properties and events. However, following this pattern, it becomes normal to pass multiple pieces of data into the component and to listen for multiple events being passed out.
+
+<p align="center">
+  <img src="imgs-notes/27.png" alt="HTML">
+</p>
+
+### Change Detection OnPush
+Following the presentational container component pattern allows us to more easily take advantage of an Angular change detection strategy called OnPush to optimize our view performance. Reading the Angular API documentation for ChangeDetectionStrategy OnPush, it says that change detector's mode will be initial set to CheckOnce.
+
+#### What does this mean for our performance?
+Basically this strategy tells Angular that a component depends solely on @Inputs and only needs to be checked if it receives a new input reference or if the component or its children trigger a DOM event, like a button click. When I say input reference, I mean that in order to trigger change detection in our component, we need to change the input object reference, not just mutate it (This is another example of how dealing with immutable store data with NgRx can help us take advantage of more advanced patterns).
+
+<p align="center">
+  <img src="imgs-notes/29.png" alt="OnPush">
+</p>
+
+It's important to note any asynchronous API events, like XHR or promise-based events, will not trigger change detection once you change to this strategy of OnPush and the components template will not get updated.
+
+#### Angular uses ChangeDetectionStretagy by Default
+The default strategy doesn't assume anything about the application, therefore every time changes in your application as a result of any user events, timers, XHR requests, promises, etc, change detection will run on all components. This means anything from a click event to a data received from an HTTP call, causes change detection to be triggered, potentially causing performance issues in your application as it checks every component.
+
+The OnPush ChangeDetection strategy will skip change detection unless the components inputs receive a new value or object reference. TO use it, add ChangeDetectionStrategy. OnPush to the component's decorators ChangeDetection property. It's easier to use this when categorizing components into presentational or container components.
+
+#### Example
+The way Angular's change detection system works is that if a button click, for example, occurs down here at the bottom of the tree, it will trigger a round of change detection. Angular's change detection starts at the top at its root component and goes down the component tree, checking every component, even if it has not changed.
+
+<p align="center">
+  <img src="imgs-notes/30.gif" alt="Default">
+</p>
+
+In contrast, if a button click occurs again, but this time we change this component's change detection strategy to OnPush, Angular will still run around a change detection starting at the root component and working its way down the component tree, however, the component marked with OnPush and all of its children will be skipped. This can make a real world difference in an application with a lot of components loaded with thousands of potential expressions to be checked every time a button is clicked.
+
+<p align="center">
+  <img src="imgs-notes/31.gif" alt="OnPush">
+</p>
+
+Using this strategy with the presentational container pattern is pretty simple. On all your container components, you change their ChangeDetectionStrategy to OnPush. This is done in the component's app component decorator. By default the ChangeDetectionStrategy is set to default.
+
+```typescript
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+
+@Component({
+  templateUrl: '...',
+  styleUrl: '...',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+
+export class ProductShellComponent implements OnInit { }
+```
+
+Remember that now unless a new input reference is passed or a DOM event is raised in your component or its children, the view will not get updated.
+
+### Summary of the State, Actions and Effect
+<p align="center">
+  <img src="imgs-notes/28.png" alt="Summary">
+</p>
+
+## Additional NgRx Libraries
+
+### @ngrx/entity
+Most Angular applications manage entities, such as products. As we've seen in this course, there is quite a bit of code required to build the actions and reducers for our entity, Create, Read, Update and Delete, or CRUD, operations.
+
+NgRx entity is the library that provides helper functions for managing collections of entities and building the actions, reducers, and selectors, minimizing the boilerplate for CRUD operations.
+
+Use NgRx entity anytime you want to reduce the amount of code required to manage entities in your NgRx application.
+
+### @ngrx/schematics
+Schematics are a scaffolding library provided as part of the Angular CLI. If you've ever used ng new or ng generate, you've seen how the CLI uses schematics to generate code. You and your team can build your own schematics to change how the CLI generates code or add more specific code generation specifications.
+
+The NgRx schematics library is a set of schematics specifically for generating NgRx code using the Angular CLI. You can generate the code to set up the application with a store. You can generate actions, reducers, and effects, and NgRx schematics has blueprints for generating code for feature modules, container components, and NgRx entities.
+
+### @ngrx/router-store
+Angular's routing helps us move the user from one view of the application to another. We can connect the Angular router to the store using NgRx router store. This library dispatches router navigation actions so we can process them like any other actions in the application.
+
+### ngrx-data
+Instead of helping us with NgRx by generating code, the ngrx-data library takes a different approach and instead abstracts it all away. With a little configuration, and by following a few conventions, ngrx-data handles the rest, but only for our entities. It does not handle any other type of application state. With ngrx-data, when working with entities, we don't need to create actions or action creators. No reducers, no selectors, no effects, and no code generation. Instead, we define some metadata, register the appropriate module, and everything else is handled in the ngrx-data library, and it offers extension points for customization as needed.
+
+Use this library if you want the benefits of NgRx for your entity but don't want to write any of the code. But note that this also means you are giving up some control for how NgRx works with your entities in your application.

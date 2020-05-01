@@ -13,7 +13,6 @@ const appRoutes: Routes = [
       { path: 'home', component: HomeComponent },
       {
         path: 'products',
-        // canActivate: [AuthGuard],
         loadChildren: () =>
           import('./products/product.module').then((m) => m.ProductModule),
       },
