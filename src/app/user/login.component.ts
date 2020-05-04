@@ -8,9 +8,9 @@ import { takeWhile } from 'rxjs/operators';
 
 // NgRx
 import { Store, select } from '@ngrx/store';
-import * as fromUser from './state/user.reducer';
+import * as fromUser from './state';
 import * as fromRoot from '../state/app.state';
-import * as userActions from './state/user.actions';
+import { maskUserName } from './state/user.actions';
 
 @Component({
   templateUrl: './login.component.html',
@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.store
       .pipe(
-        select(fromUser.getMaskUserName),
+        select(fromUser.selectMaskUserName),
         takeWhile(() => this.componentActive)
       )
       .subscribe((maskUserName) => (this.maskUserName = maskUserName));
@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   checkChanged(value: boolean): void {
-    this.store.dispatch(new userActions.MaskUserName(value));
+    this.store.dispatch(maskUserName({ maskUserName: value }));
   }
 
   login(loginForm: NgForm): void {

@@ -1,21 +1,12 @@
-import { Action } from '@ngrx/store';
+import { createAction, props } from '@ngrx/store';
 import { User } from '../user';
 
-export enum UserActionTypes {
-  MaskUserName = '[User] Mask User Name',
-  SetCurrentUser = '[User] Set Current User',
-}
+export const maskUserName = createAction(
+  '[User] Mask User Name',
+  props<{ maskUserName: boolean }>()
+);
 
-export class MaskUserName implements Action {
-  readonly type = UserActionTypes.MaskUserName;
-
-  constructor(public payload: boolean) {}
-}
-
-export class SetCurrentUser implements Action {
-  readonly type = UserActionTypes.SetCurrentUser;
-
-  constructor(public payload: User) {}
-}
-
-export type UserActions = MaskUserName | SetCurrentUser;
+export const setCurrentUser = createAction(
+  '[User] Set Current User',
+  props<{ currentUser: User }>()
+);

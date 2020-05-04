@@ -1,38 +1,26 @@
-import { User } from '../user';
-import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { UserActions, UserActionTypes } from './user.actions';
+import { createReducer, on, Action } from '@ngrx/store';
+import * as UserActions from './user.actions';
+import { UserState } from '.';
 
-// State for this feature (User)
-export interface UserState {
-  maskUserName: boolean;
-  currentUser: User;
-}
+export const userFeatureKey = 'user';
 
 const initialState: UserState = {
   maskUserName: true,
   currentUser: null,
 };
 
-// Selector functions
-const getUserFeatureState = createFeatureSelector<UserState>('users');
-
-export const getMaskUserName = createSelector(
-  getUserFeatureState,
-  (state) => state.maskUserName
+const userReducer = createReducer(
+  initialState,
+  on(UserActions.maskUserName, (state, { maskUserName }) => ({
+    ...state,
+    maskUserName: maskUserName,
+  })),
+  on(UserActions.setCurrentUser, (state) => ({
+    ...state,
+    currentUser: state.currentUser,
+  }))
 );
 
-export const getCurrentUser = createSelector(
-  getUserFeatureState,
-  (state) => state.currentUser
-);
-
-export function reducer(state = initialState, action: UserActions): UserState {
-  switch (action.type) {
-    case UserActionTypes.MaskUserName:
-      return { ...state, maskUserName: action.payload };
-    case UserActionTypes.SetCurrentUser:
-      return { ...state, currentUser: action.payload };
-    default:
-      return state;
-  }
+export function reducer(state: UserState, action: Action) {
+  return userReducer(state, action);
 }
