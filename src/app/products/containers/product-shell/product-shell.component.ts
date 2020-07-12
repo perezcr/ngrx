@@ -1,10 +1,19 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { Store, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
 
 import { Product } from '../../product';
-import * as fromProduct from '../../state/product.reducer';
-import * as productActions from '../../state/product.actions';
+
+/* NgRx */
+import { Store } from '@ngrx/store';
+import {
+  State,
+  getShowProductCode,
+  getCurrentProduct,
+  getProducts,
+  getError,
+} from '../../state';
+
+import { ProductPageActions } from '../../state/actions';
 
 @Component({
   templateUrl: './product-shell.component.html',
@@ -16,42 +25,52 @@ export class ProductShellComponent implements OnInit {
   products$: Observable<Product[]>;
   selectedProduct$: Observable<Product>;
 
-  constructor(private store: Store<fromProduct.State>) {}
+  constructor(private store: Store<State>) {}
 
   ngOnInit(): void {
-    this.store.dispatch(new productActions.Load());
+    // Do NOT subscribe here because it uses an async pipe
+    // This gets the initial values until the load is complete.
+    this.products$ = this.store.select(getProducts);
 
-    this.products$ = this.store.pipe(select(fromProduct.getProducts));
-    this.errorMessage$ = this.store.pipe(select(fromProduct.getError));
-    this.displayCode$ = this.store.pipe(select(fromProduct.getShowProductCode));
-    this.selectedProduct$ = this.store.pipe(select(fromProduct.getCurrentProduct));
+    // Do NOT subscribe here because it uses an async pipe
+    this.errorMessage$ = this.store.select(getError);
+
+    this.store.dispatch(ProductPageActions.loadProducts());
+
+    // Do NOT subscribe here because it uses an async pipe
+    this.selectedProduct$ = this.store.select(getCurrentProduct);
+
+    // Do NOT subscribe here because it uses an async pipe
+    this.displayCode$ = this.store.select(getShowProductCode);
   }
 
   checkChanged(value: boolean): void {
-    this.store.dispatch(new productActions.ToggleProductCode(value));
+    this.store.dispatch(ProductPageActions.toggleProductCode());
   }
 
   newProduct(): void {
-    this.store.dispatch(new productActions.InitializeCurrentProduct());
+    this.store.dispatch(ProductPageActions.initializeCurrentProduct());
   }
 
   productSelected(product: Product): void {
-    this.store.dispatch(new productActions.SetCurrentProduct(product));
+    this.store.dispatch(
+      ProductPageActions.setCurrentProduct({ currentProductId: product.id })
+    );
   }
 
   clearProduct(): void {
-    this.store.dispatch(new productActions.ClearCurrentProduct());
+    this.store.dispatch(ProductPageActions.clearCurrentProduct());
   }
 
   saveProduct(product: Product): void {
-    this.store.dispatch(new productActions.CreateProduct(product));
+    this.store.dispatch(ProductPageActions.createProduct({ product }));
   }
 
   updateProduct(product: Product): void {
-    this.store.dispatch(new productActions.UpdateProduct(product));
+    this.store.dispatch(ProductPageActions.updateProduct({ product }));
   }
 
   deleteProduct(product: Product): void {
-    this.store.dispatch(new productActions.DeleteProduct(product.id));
+    this.store.dispatch(ProductPageActions.deleteProduct({ productId: product.id }));
   }
 }

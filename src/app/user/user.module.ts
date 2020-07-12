@@ -4,8 +4,10 @@ import { RouterModule, Routes } from '@angular/router';
 import { SharedModule } from '../shared/shared.module';
 
 import { LoginComponent } from './login.component';
+
+// NgRx
 import { StoreModule } from '@ngrx/store';
-import * as fromUser from './state/user.reducer';
+import { userReducer } from './state/user.reducer';
 
 const userRoutes: Routes = [{ path: 'login', component: LoginComponent }];
 
@@ -13,7 +15,7 @@ const userRoutes: Routes = [{ path: 'login', component: LoginComponent }];
   imports: [
     SharedModule,
     RouterModule.forChild(userRoutes),
-    StoreModule.forFeature(fromUser.userFeatureKey, fromUser.reducer),
+    StoreModule.forFeature('users', userReducer),
   ],
   declarations: [LoginComponent],
 })

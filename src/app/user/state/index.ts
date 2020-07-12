@@ -1,21 +1,21 @@
-import { createSelector } from '@ngrx/store';
-import { State } from 'src/app/state/app.state';
-import { User } from '../user';
+import { createFeatureSelector, createSelector } from '@ngrx/store';
+import * as AppState from '../../state/app.state';
+import { UserState } from './user.reducer';
 
-export interface UserState {
-  maskUserName: boolean;
-  currentUser: User;
+// State for this feature (User)
+export interface State extends AppState.State {
+  users: UserState;
 }
 
 // Selector functions
-const selectUser = (state: State): UserState => state.user;
+const getUserFeatureState = createFeatureSelector<UserState>('users');
 
-export const selectMaskUserName = createSelector(
-  selectUser,
-  (state: UserState) => state.maskUserName
+export const getMaskUserName = createSelector(
+  getUserFeatureState,
+  (state) => state.maskUserName
 );
 
-export const selectCurrentUser = createSelector(
-  selectUser,
-  (state: UserState) => state.currentUser
+export const getCurrentUser = createSelector(
+  getUserFeatureState,
+  (state) => state.currentUser
 );

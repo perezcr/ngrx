@@ -1,14 +1,8 @@
 import { Product } from '../product';
-import * as fromRoot from '../../state/app.state';
-import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { ProductActions, ProductActionTypes } from './product.actions';
 
-// Extends the app state to include the product feature.
-// This is required because products are lazy loaded.
-// So the reference to ProductState cannot be added to app.state.ts directly.
-export interface State extends fromRoot.State {
-  products: ProductState;
-}
+/* NgRx */
+import { createReducer, on } from '@ngrx/store';
+import { ProductApiActions, ProductPageActions } from './actions';
 
 // State for this feature (Product)
 export interface ProductState {
@@ -25,130 +19,127 @@ const initialState: ProductState = {
   error: '',
 };
 
-// Selector functions
-const getProductFeatureState = createFeatureSelector<ProductState>('products');
-
-export const getShowProductCode = createSelector(
-  getProductFeatureState,
-  (state) => state.showProductCode
-);
-
-export const getCurrentProductId = createSelector(
-  getProductFeatureState,
-  (state) => state.currentProductId
-);
-
-export const getCurrentProduct = createSelector(
-  getProductFeatureState,
-  getCurrentProductId,
-  (state, currentProductId) => {
-    if (currentProductId === 0) {
+export const productReducer = createReducer<ProductState>(
+  initialState,
+  on(
+    ProductPageActions.toggleProductCode,
+    (state): ProductState => {
       return {
-        id: 0,
-        productName: '',
-        productCode: 'New',
-        description: '',
-        starRating: 0,
+        ...state,
+        showProductCode: !state.showProductCode,
       };
-    } else {
-      return currentProductId
-        ? state.products.find((productIt) => productIt.id === currentProductId)
-        : null;
     }
-  }
-);
-
-export const getProducts = createSelector(
-  getProductFeatureState,
-  (state) => state.products
-);
-
-export const getError = createSelector(
-  getProductFeatureState,
-  (state) => state.error
-);
-
-// First parameter: State from our store
-// Second parameter: Action to be processed
-export function reducer(
-  state = initialState,
-  action: ProductActions
-): ProductState {
-  switch (action.type) {
-    case ProductActionTypes.ToggleProductCode:
+  ),
+  on(
+    ProductPageActions.setCurrentProduct,
+    (state, action): ProductState => {
       return {
         ...state,
-        showProductCode: action.payload,
+        currentProductId: action.currentProductId,
       };
-    case ProductActionTypes.SetCurrentProduct:
-      return {
-        ...state,
-        currentProductId: action.payload.id,
-      };
-    case ProductActionTypes.ClearCurrentProduct:
+    }
+  ),
+  on(
+    ProductPageActions.clearCurrentProduct,
+    (state): ProductState => {
       return {
         ...state,
         currentProductId: null,
       };
-    case ProductActionTypes.InitializeCurrentProduct:
+    }
+  ),
+  on(
+    ProductPageActions.initializeCurrentProduct,
+    (state): ProductState => {
       return {
         ...state,
         currentProductId: 0,
       };
-    case ProductActionTypes.LoadSuccess:
+    }
+  ),
+  on(
+    ProductApiActions.loadProductsSuccess,
+    (state, action): ProductState => {
       return {
         ...state,
-        products: action.payload,
+        products: action.products,
         error: '',
       };
-    case ProductActionTypes.LoadFail:
+    }
+  ),
+  on(
+    ProductApiActions.loadProductsFailure,
+    (state, action): ProductState => {
       return {
         ...state,
         products: [],
-        error: action.payload,
+        error: action.error,
       };
-    case ProductActionTypes.CreateProductSuccess:
-      return {
-        ...state,
-        products: [...state.products, action.payload],
-        currentProductId: action.payload.id,
-        error: '',
-      };
-    case ProductActionTypes.CreateProductFail:
-      return {
-        ...state,
-        error: action.payload,
-      };
-    case ProductActionTypes.UpdateProductSuccess:
+    }
+  ),
+  on(
+    ProductApiActions.updateProductSuccess,
+    (state, action): ProductState => {
       const updatedProducts = state.products.map((item) =>
-        action.payload.id === item.id ? action.payload : item
+        action.product.id === item.id ? action.product : item
       );
       return {
         ...state,
         products: updatedProducts,
-        currentProductId: action.payload.id,
+        currentProductId: action.product.id,
         error: '',
       };
-    case ProductActionTypes.UpdateProductFail:
-      return { ...state, error: action.payload };
-
-    case ProductActionTypes.DeleteProductSuccess:
-      // After a delete, the currentProduct is null.
+    }
+  ),
+  on(
+    ProductApiActions.updateProductFailure,
+    (state, action): ProductState => {
       return {
         ...state,
-        products: state.products.filter(
-          (product) => product.id !== action.payload
-        ),
+        error: action.error,
+      };
+    }
+  ),
+  // After a create, the currentProduct is the new product.
+  on(
+    ProductApiActions.createProductSuccess,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        products: [...state.products, action.product],
+        currentProductId: action.product.id,
+        error: '',
+      };
+    }
+  ),
+  on(
+    ProductApiActions.createProductFailure,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        error: action.error,
+      };
+    }
+  ),
+  // After a delete, the currentProduct is null.
+  on(
+    ProductApiActions.deleteProductSuccess,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        products: state.products.filter((product) => product.id !== action.productId),
         currentProductId: null,
         error: '',
       };
-    case ProductActionTypes.DeleteProductFail:
+    }
+  ),
+  on(
+    ProductApiActions.deleteProductFailure,
+    (state, action): ProductState => {
       return {
         ...state,
-        error: action.payload,
+        error: action.error,
       };
-    // If none of the action types match the dispatched action our default case returns the original state to the store
-    default:
-      return state;
-  }
-}
+    }
+  )
+);
