@@ -8,8 +8,8 @@ import { AuthService } from './auth.service';
 
 // NgRx
 import { Store } from '@ngrx/store';
-import { State, getMaskUserName } from './state';
-
+import { State } from './state/user.state';
+import { getMaskUserName } from './state/user.selector';
 import { UserPageActions } from './state/actions';
 
 @Component({

@@ -9,7 +9,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { ProductPageActions, ProductApiActions } from './actions';
 
 @Injectable()
-export class ProductEffects {
+export class ProductEffect {
   constructor(private actions$: Actions, private productService: ProductService) {}
 
   loadProducts$ = createEffect(() => {

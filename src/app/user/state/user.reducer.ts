@@ -1,19 +1,7 @@
-import { User } from '../user';
-
 /* NgRx */
 import { createReducer, on } from '@ngrx/store';
 import { UserPageActions } from './actions';
-
-// State for this feature (User)
-export interface UserState {
-  maskUserName: boolean;
-  currentUser: User;
-}
-
-const initialState: UserState = {
-  maskUserName: true,
-  currentUser: null,
-};
+import { UserState, initialState } from './user.state';
 
 export const userReducer = createReducer<UserState>(
   initialState,

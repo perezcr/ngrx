@@ -1,23 +1,6 @@
-import { Product } from '../product';
-
-/* NgRx */
 import { createReducer, on } from '@ngrx/store';
 import { ProductApiActions, ProductPageActions } from './actions';
-
-// State for this feature (Product)
-export interface ProductState {
-  showProductCode: boolean;
-  currentProductId: number | null;
-  products: Product[];
-  error: string;
-}
-
-const initialState: ProductState = {
-  showProductCode: true,
-  currentProductId: null,
-  products: [],
-  error: '',
-};
+import { ProductState, initialState } from './product.state';
 
 export const productReducer = createReducer<ProductState>(
   initialState,

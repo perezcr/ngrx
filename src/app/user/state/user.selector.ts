@@ -1,11 +1,5 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import * as AppState from '../../state/app.state';
-import { UserState } from './user.reducer';
-
-// State for this feature (User)
-export interface State extends AppState.State {
-  users: UserState;
-}
+import { UserState } from './user.state';
 
 // Selector functions
 const getUserFeatureState = createFeatureSelector<UserState>('users');

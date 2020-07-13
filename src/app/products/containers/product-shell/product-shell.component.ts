@@ -5,14 +5,13 @@ import { Product } from '../../product';
 
 /* NgRx */
 import { Store } from '@ngrx/store';
+import { State } from 'src/app/products/state/product.state';
 import {
-  State,
   getShowProductCode,
   getCurrentProduct,
   getProducts,
   getError,
-} from '../../state';
-
+} from '../../state/product.selector';
 import { ProductPageActions } from '../../state/actions';
 
 @Component({
